@@ -32,16 +32,22 @@ const PORT = process.env.PORT || 5000;
 // ==================== MIDDLEWARE ====================
 
 // Security middleware - adds various security headers
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+}));
 
-// Enable CORS - allows our Flutter app to communicate with this API
+// Enable CORS - allows our Flutter web app to communicate with this API
 app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'http://localhost:5000',
-        'http://127.0.0.1:5000',
-        '*'
+        'http://localhost:8080',
+        'https://galamsey-ecowatch-ghana.onrender.com',
+        'https://galamsey-ecowatch-ghana.netlify.app',
+        /\.netlify\.app$/,      // Allow all Netlify subdomains
+        /\.onrender\.com$/      // Allow all Render subdomains
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -50,9 +56,15 @@ app.use(cors({
         'Authorization',
         'Accept',
         'Origin',
-        'X-Requested-With'
+        'X-Requested-With',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Methods'
     ]
 }));
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors());
 
 // Parse JSON request bodies
 app.use(express.json({ limit: '10mb' }));

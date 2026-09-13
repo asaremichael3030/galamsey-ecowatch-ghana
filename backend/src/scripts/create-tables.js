@@ -92,6 +92,20 @@ async function createTables() {
         console.error('❌ Error creating tables:', error.message);
         process.exit(1);
     }
+
+    // Create report_evidence table
+ await pool.query(`
+    CREATE TABLE IF NOT EXISTS report_evidence (
+        id SERIAL PRIMARY KEY,
+        report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+        file_url TEXT NOT NULL,
+        file_type VARCHAR(100),
+        file_size INTEGER,
+        public_id VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  console.log('✅ Report evidence table created');
 }
 
 createTables();

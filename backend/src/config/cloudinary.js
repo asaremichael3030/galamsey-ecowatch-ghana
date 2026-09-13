@@ -4,106 +4,107 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'demo',
-    api_key: process.env.CLOUDINARY_API_KEY || '',
-    api_secret: process.env.CLOUDINARY_API_SECRET || '',
-});
+// ============ CONFIGURE CLOUDINARY ============
+const cloudinaryConfigured = 
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET;
 
-// Local multer storage (for temporary files before Cloudinary upload)
+if (cloudinaryConfigured) {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+        secure: true,
+    });
+    console.log('✅ Cloudinary configured successfully');
+} else {
+    console.warn('⚠️  Cloudinary credentials missing. Falling back to local storage.');
+    console.warn('   Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
+}
+
+// ============ MULTER TEMPORARY STORAGE ============
+// Multer saves to a temp folder first, then we upload to Cloudinary
+const tempDir = path.join(__dirname, '../../public/temp');
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = path.join(__dirname, '../../public/uploads/temp');
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
+    destination: (req, file, cb) => cb(null, tempDir),
+    filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        cb(null, 'evidence-' + uniqueSuffix + ext);
+        cb(null, `upload-${uniqueSuffix}${ext}`);
     }
 });
 
-// Multer upload configuration
 const upload = multer({
     storage: storage,
     limits: {
         fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
     },
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime'];
-        if (allowedTypes.includes(file.mimetype)) {
+        const allowed = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'video/mp4', 'video/quicktime'
+        ];
+        if (allowed.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Invalid file type. Only images and videos are allowed.'), false);
+            cb(new Error('Invalid file type. Only images and videos allowed.'), false);
         }
     },
 });
 
-// Upload to Cloudinary
-const uploadToCloudinary = async (filePath, folder = 'ecowatch_reports') => {
+// ============ UPLOAD TO CLOUDINARY ============
+const uploadToCloudinary = async (filePath, resourceType = 'auto') => {
+    if (!cloudinaryConfigured) {
+        throw new Error('Cloudinary not configured');
+    }
+
     try {
-        // Check if Cloudinary is configured
-        if (!process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME === 'demo') {
-            console.log('Cloudinary not configured. File saved locally.');
-            // Return local file path as URL
-            return {
-                secure_url: `/uploads/temp/${path.basename(filePath)}`,
-                public_id: path.basename(filePath),
-                is_local: true
-            };
-        }
-        
         const result = await cloudinary.uploader.upload(filePath, {
-            folder: folder,
-            transformation: [
-                { width: 1200, height: 1200, crop: 'limit' }
-            ],
-            resource_type: 'auto',
+            folder: 'ecowatch_reports',
+            resource_type: resourceType,
+            transformation: resourceType === 'image' 
+                ? [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }]
+                : undefined,
         });
         return result;
     } catch (error) {
-        console.error('Cloudinary upload error:', error);
-        // Fallback to local storage
-        return {
-            secure_url: `/uploads/temp/${path.basename(filePath)}`,
-            public_id: path.basename(filePath),
-            is_local: true
-        };
+        console.error('Cloudinary upload error:', error.message);
+        throw error;
     }
 };
 
-// Delete from Cloudinary
+// ============ DELETE FROM CLOUDINARY ============
 const deleteFromCloudinary = async (publicId) => {
+    if (!publicId || !cloudinaryConfigured) return null;
     try {
-        if (!publicId) return;
-        // If it's a local file, just return
-        if (publicId.startsWith('evidence-') || !publicId.includes('/')) {
-            return { result: 'ok' };
-        }
-        const result = await cloudinary.uploader.destroy(publicId);
-        return result;
+        return await cloudinary.uploader.destroy(publicId);
     } catch (error) {
-        console.error('Cloudinary delete error:', error);
-        return { result: 'ok' };
+        console.error('Cloudinary delete error:', error.message);
+        return null;
     }
 };
 
-// Extract public_id from Cloudinary URL
+// ============ HELPER: Extract public_id from URL ============
 const extractPublicId = (url) => {
     if (!url) return null;
-    // Check if it's a local URL
-    if (url.startsWith('/uploads/')) {
-        return path.basename(url);
+    try {
+        // Cloudinary URLs look like:
+        // https://res.cloudinary.com/<cloud>/image/upload/v123/ecowatch_reports/abc.jpg
+        const parts = url.split('/');
+        const uploadIndex = parts.indexOf('upload');
+        if (uploadIndex === -1) return null;
+        // Skip the version segment (v123...)
+        const afterUpload = parts.slice(uploadIndex + 2);
+        const filename = afterUpload.join('/').split('.')[0];
+        return filename;
+    } catch {
+        return null;
     }
-    const parts = url.split('/');
-    const filename = parts[parts.length - 1];
-    const publicId = filename.split('.')[0];
-    return publicId;
 };
 
 module.exports = {
@@ -112,4 +113,5 @@ module.exports = {
     uploadToCloudinary,
     deleteFromCloudinary,
     extractPublicId,
+    cloudinaryConfigured,
 };

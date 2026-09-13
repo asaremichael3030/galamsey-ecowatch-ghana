@@ -1,11 +1,11 @@
 class AppConfig {
-  // Development API URL
-  static const String apiUrl = 'http://localhost:5000/api';
+  // Development (local) – comment out when deploying
+  // static const String apiUrl = 'http://localhost:5000/api';
   
-  // For production, change this to your deployed API URL
-  // static const String apiUrl = 'https://your-api-domain.com/api';
+  // Production (Render)
+  static const String apiUrl = 'https://galamsey-ecowatch-ghana.onrender.com/api';
   
   // Timeouts
-  static const Duration connectionTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration connectionTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 }

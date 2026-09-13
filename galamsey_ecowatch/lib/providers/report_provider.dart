@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../models/report_model.dart';
 
@@ -12,14 +13,12 @@ class ReportProvider extends ChangeNotifier {
   bool _isSubmitting = false;
   String? _error;
 
-  // User statistics
   int _totalReports = 0;
   int _pendingReports = 0;
   int _underReview = 0;
   int _verified = 0;
   int _resolved = 0;
-  
-  // Admin statistics (all reports)
+
   int _adminTotalReports = 0;
   int _adminPendingReports = 0;
   int _adminUnderReview = 0;
@@ -28,7 +27,6 @@ class ReportProvider extends ChangeNotifier {
   int _adminRejected = 0;
   int _adminClosed = 0;
 
-  // Getters
   List<Report> get reports => _reports;
   Report? get currentReport => _currentReport;
   bool get isLoading => _isLoading;
@@ -39,8 +37,7 @@ class ReportProvider extends ChangeNotifier {
   int get underReview => _underReview;
   int get verified => _verified;
   int get resolved => _resolved;
-  
-  // Admin getters
+
   int get adminTotalReports => _adminTotalReports;
   int get adminPendingReports => _adminPendingReports;
   int get adminUnderReview => _adminUnderReview;
@@ -51,66 +48,50 @@ class ReportProvider extends ChangeNotifier {
 
   ReportProvider(this.apiService);
 
-  // Load all reports for the current user
   Future<void> loadReports({String? status}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
     try {
       final Map<String, dynamic> queryParams = {};
       if (status != null) queryParams['status'] = status;
-
       final response = await apiService.get('/reports', queryParams: queryParams);
-      
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final List<dynamic> reportsData = response.data['data']['reports'];
-        _reports = reportsData.map((json) => Report.fromJson(json)).toList();
+        final List<dynamic> data = response.data['data']['reports'];
+        _reports = data.map((j) => Report.fromJson(j)).toList();
       } else {
         _error = response.data['message'] ?? 'Failed to load reports';
       }
     } catch (e) {
-      _error = 'Network error. Please check your connection.';
+      _error = 'Network error';
     }
-
     _isLoading = false;
     notifyListeners();
   }
 
-  // Load ALL reports for admin (no user filtering)
   Future<void> loadAdminReports({String? status}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
     try {
       final Map<String, dynamic> queryParams = {};
       if (status != null) queryParams['status'] = status;
-
       final response = await apiService.get('/reports/admin/all', queryParams: queryParams);
-      
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final List<dynamic> reportsData = response.data['data']['reports'];
-        _reports = reportsData.map((json) => Report.fromJson(json)).toList();
-        
-        // Update admin statistics
+        final List<dynamic> data = response.data['data']['reports'];
+        _reports = data.map((j) => Report.fromJson(j)).toList();
         await loadAdminStats();
-      } else {
-        _error = response.data['message'] ?? 'Failed to load reports';
       }
     } catch (e) {
-      _error = 'Network error. Please check your connection.';
+      _error = 'Network error';
     }
-
     _isLoading = false;
     notifyListeners();
   }
 
-  // Load admin dashboard statistics (all reports)
   Future<void> loadAdminStats() async {
     try {
       final response = await apiService.get('/reports/stats/dashboard');
-      
       if (response.statusCode == 200 && response.data['success'] == true) {
         final stats = response.data['data']['stats'];
         _adminTotalReports = int.parse(stats['total']?.toString() ?? '0');
@@ -127,33 +108,27 @@ class ReportProvider extends ChangeNotifier {
     }
   }
 
-  // Load a specific report by ID
   Future<void> loadReportById(int id) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
     try {
       final response = await apiService.get('/reports/$id');
-      
       if (response.statusCode == 200 && response.data['success'] == true) {
         _currentReport = Report.fromJson(response.data['data']['report']);
       } else {
         _error = response.data['message'] ?? 'Failed to load report';
       }
     } catch (e) {
-      _error = 'Network error. Please check your connection.';
+      _error = 'Network error';
     }
-
     _isLoading = false;
     notifyListeners();
   }
 
-  // Load user report statistics
   Future<void> loadUserStats() async {
     try {
       final response = await apiService.get('/users/stats');
-      
       if (response.statusCode == 200 && response.data['success'] == true) {
         final stats = response.data['data']['stats'];
         _totalReports = stats['total_reports'] ?? 0;
@@ -163,12 +138,10 @@ class ReportProvider extends ChangeNotifier {
         _resolved = stats['resolved'] ?? 0;
         notifyListeners();
       }
-    } catch (e) {
-      // Silent fail for stats
-    }
+    } catch (e) {}
   }
 
-  // Create a new report
+  // ===== CHANGED: accepts List<XFile> for cross-platform support =====
   Future<Map<String, dynamic>> createReport({
     required String title,
     required String description,
@@ -181,7 +154,7 @@ class ReportProvider extends ChangeNotifier {
     String? district,
     String? community,
     bool anonymous = false,
-    List<String>? evidencePaths,
+    List<XFile>? evidenceFiles,
   }) async {
     _isSubmitting = true;
     _error = null;
@@ -195,7 +168,6 @@ class ReportProvider extends ChangeNotifier {
         'severity': severity,
         'anonymous': anonymous,
       };
-
       if (observedAt != null) data['observed_at'] = observedAt.toIso8601String();
       if (latitude != null) data['latitude'] = latitude;
       if (longitude != null) data['longitude'] = longitude;
@@ -204,24 +176,22 @@ class ReportProvider extends ChangeNotifier {
       if (community != null) data['community'] = community;
 
       final response = await apiService.post('/reports', data: data);
-      
+
       if (response.statusCode == 201 && response.data['success'] == true) {
         final newReport = Report.fromJson(response.data['data']['report']);
-        
+
         // Upload evidence if provided
-        if (evidencePaths != null && evidencePaths.isNotEmpty) {
-          await _uploadEvidence(newReport.id, evidencePaths);
+        if (evidenceFiles != null && evidenceFiles.isNotEmpty) {
+          await _uploadEvidence(newReport.id, evidenceFiles);
         }
 
-        // Refresh reports list
         await loadReports();
-        
         _isSubmitting = false;
         notifyListeners();
-        
+
         return {
           'success': true,
-          'message': response.data['message'] ?? 'Report submitted successfully',
+          'message': response.data['message'] ?? 'Report submitted',
           'data': newReport,
         };
       } else {
@@ -229,103 +199,98 @@ class ReportProvider extends ChangeNotifier {
         notifyListeners();
         return {
           'success': false,
-          'message': response.data['message'] ?? 'Failed to submit report',
+          'message': response.data['message'] ?? 'Failed to submit',
         };
       }
     } catch (e) {
       _isSubmitting = false;
-      _error = 'Network error. Please check your connection.';
+      _error = 'Network error';
       notifyListeners();
       return {
         'success': false,
-        'message': 'Network error. Please check your connection.',
+        'message': 'Network error',
       };
     }
   }
 
-  // Upload evidence for a report
-  Future<bool> _uploadEvidence(int reportId, List<String> evidencePaths) async {
+  // ===== CHANGED: Uses readAsBytes() instead of fromFile() =====
+  // This is what makes it work on web (and mobile).
+  Future<bool> _uploadEvidence(int reportId, List<XFile> evidenceFiles) async {
     try {
       final formData = FormData();
-      for (String path in evidencePaths) {
-        final file = await MultipartFile.fromFile(path, filename: path.split('/').last);
+
+      for (final XFile xfile in evidenceFiles) {
+        // Read bytes — works on web, mobile, and desktop
+        final bytes = await xfile.readAsBytes();
+        final filename = xfile.name; // original filename
+
+        // Detect MIME type from extension
+        final ext = filename.split('.').last.toLowerCase();
+        String mimeType = 'application/octet-stream';
+        if (['jpg', 'jpeg'].contains(ext)) mimeType = 'image/jpeg';
+        else if (ext == 'png') mimeType = 'image/png';
+        else if (ext == 'gif') mimeType = 'image/gif';
+        else if (ext == 'webp') mimeType = 'image/webp';
+        else if (ext == 'mp4') mimeType = 'video/mp4';
+        else if (['mov', 'quicktime'].contains(ext)) mimeType = 'video/quicktime';
+
         formData.files.add(
-          MapEntry('evidence', file),
+          MapEntry(
+            'evidence',
+            MultipartFile.fromBytes(
+              bytes,
+              filename: filename,
+              contentType: DioMediaType.parse(mimeType),
+            ),
+          ),
         );
       }
 
-      final response = await apiService.upload(
-        '/reports/$reportId/evidence',
-        formData,
-      );
-
-      return response.statusCode == 201 && response.data['success'] == true;
+      final response = await apiService.upload('/reports/$reportId/evidence', formData);
+      print('Evidence upload response: ${response.statusCode}');
+      return response.statusCode == 201;
     } catch (e) {
       print('Upload evidence error: $e');
       return false;
     }
   }
 
-  // Update report status (admin/officer only)
   Future<Map<String, dynamic>> updateReportStatus(int reportId, String status, {String? comment}) async {
     _isSubmitting = true;
-    _error = null;
     notifyListeners();
-
     try {
       final response = await apiService.patch(
         '/reports/$reportId/status',
-        data: {
-          'status': status,
-          'comment': comment,
-        },
+        data: {'status': status, 'comment': comment},
       );
-      
       if (response.statusCode == 200 && response.data['success'] == true) {
-        // Refresh reports list
         await loadReports();
         await loadUserStats();
         await loadAdminStats();
-        
         _isSubmitting = false;
         notifyListeners();
-        
-        return {
-          'success': true,
-          'message': response.data['message'] ?? 'Status updated successfully',
-        };
-      } else {
-        _isSubmitting = false;
-        notifyListeners();
-        return {
-          'success': false,
-          'message': response.data['message'] ?? 'Failed to update status',
-        };
+        return {'success': true, 'message': response.data['message'] ?? 'Updated'};
       }
+      _isSubmitting = false;
+      notifyListeners();
+      return {'success': false, 'message': response.data['message'] ?? 'Failed'};
     } catch (e) {
       _isSubmitting = false;
-      _error = 'Network error. Please check your connection.';
       notifyListeners();
-      return {
-        'success': false,
-        'message': 'Network error. Please check your connection.',
-      };
+      return {'success': false, 'message': 'Network error'};
     }
   }
 
-  // Get reports for map view
   Future<List<Report>> getMapReports({String? status, String? region, String? severity}) async {
     try {
-      final Map<String, dynamic> queryParams = {};
-      if (status != null) queryParams['status'] = status;
-      if (region != null) queryParams['region'] = region;
-      if (severity != null) queryParams['severity'] = severity;
-
-      final response = await apiService.get('/reports/map', queryParams: queryParams);
-      
+      final Map<String, dynamic> qp = {};
+      if (status != null) qp['status'] = status;
+      if (region != null) qp['region'] = region;
+      if (severity != null) qp['severity'] = severity;
+      final response = await apiService.get('/reports/map', queryParams: qp);
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final List<dynamic> reportsData = response.data['data']['reports'];
-        return reportsData.map((json) => Report.fromJson(json)).toList();
+        final List<dynamic> data = response.data['data']['reports'];
+        return data.map((j) => Report.fromJson(j)).toList();
       }
       return [];
     } catch (e) {
@@ -333,19 +298,8 @@ class ReportProvider extends ChangeNotifier {
     }
   }
 
-  // Clear current report
-  void clearCurrentReport() {
-    _currentReport = null;
-    notifyListeners();
-  }
-
-  // Clear error
-  void clearError() {
-    _error = null;
-    notifyListeners();
-  }
-
-  // Reset provider
+  void clearCurrentReport() { _currentReport = null; notifyListeners(); }
+  void clearError() { _error = null; notifyListeners(); }
   void reset() {
     _reports = [];
     _currentReport = null;

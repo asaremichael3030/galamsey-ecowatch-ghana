@@ -1,0 +1,9 @@
+# netlify.toml
+[build]
+  base = "galamsey_ecowatch"
+  command = "flutter build web --release --no-tree-shake-icons"
+  publish = "build/web"
+
+# Use a community plugin to install Flutter in the build environment
+[[plugins]]
+  package = "netlify-plugin-flutter"

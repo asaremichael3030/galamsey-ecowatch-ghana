@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/report_provider.dart';
+import 'dart:typed_data'; 
 
 class CreateReportScreen extends StatefulWidget {
   const CreateReportScreen({super.key});
@@ -12,23 +12,20 @@ class CreateReportScreen extends StatefulWidget {
 }
 
 class _CreateReportScreenState extends State<CreateReportScreen> {
-  // Form controllers
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _regionController = TextEditingController();
   final _districtController = TextEditingController();
   final _communityController = TextEditingController();
-  
-  // Selected values
+
   int? _selectedCategoryId;
   String? _selectedSeverity;
   DateTime? _observedDate;
   bool _anonymous = false;
-  
-  // Evidence
-  List<File> _evidenceFiles = [];
-  List<String> _evidencePaths = [];
-  
+
+  // ===== CHANGED: store XFile instead of File =====
+  List<XFile> _evidenceFiles = [];
+
   bool _isSubmitting = false;
   bool _isSuccess = false;
   String _submittedReportCode = '';
@@ -63,20 +60,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         maxHeight: 1024,
         imageQuality: 80,
       );
-      
       if (image != null) {
-        final file = File(image.path);
-        setState(() {
-          _evidenceFiles.add(file);
-          _evidencePaths.add(image.path);
-        });
+        setState(() => _evidenceFiles.add(image));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking image: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error picking image: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -89,20 +78,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         maxHeight: 1024,
         imageQuality: 80,
       );
-      
       if (image != null) {
-        final file = File(image.path);
-        setState(() {
-          _evidenceFiles.add(file);
-          _evidencePaths.add(image.path);
-        });
+        setState(() => _evidenceFiles.add(image));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error taking photo: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error taking photo: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -119,18 +100,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
             ListTile(
               leading: const Icon(Icons.photo_library, color: Color(0xFF2E7D32)),
               title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage();
-              },
+              onTap: () { Navigator.pop(context); _pickImage(); },
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Color(0xFF2E7D32)),
               title: const Text('Take a Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _takePhoto();
-              },
+              onTap: () { Navigator.pop(context); _takePhoto(); },
             ),
           ],
         ),
@@ -138,12 +113,10 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     );
   }
 
-  void _submitReport() async {
+  Future<void> _submitReport() async {
     if (!_validateForm()) return;
-    
-    setState(() {
-      _isSubmitting = true;
-    });
+
+    setState(() => _isSubmitting = true);
 
     try {
       final reportProvider = context.read<ReportProvider>();
@@ -157,13 +130,10 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         district: _districtController.text.trim().isNotEmpty ? _districtController.text.trim() : null,
         community: _communityController.text.trim().isNotEmpty ? _communityController.text.trim() : null,
         anonymous: _anonymous,
-        evidencePaths: _evidencePaths,
+        evidenceFiles: _evidenceFiles, // CHANGED: pass XFile list
       );
 
-      setState(() {
-        _isSubmitting = false;
-      });
-
+      setState(() => _isSubmitting = false);
       if (!mounted) return;
 
       if (result['success'] == true) {
@@ -172,68 +142,38 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
           _isSuccess = true;
           _submittedReportCode = report?.reportCode ?? 'ECO-2024-000001';
         });
-        // Refresh reports after submission
         context.read<ReportProvider>().loadReports();
         context.read<ReportProvider>().loadUserStats();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Failed to submit report'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+          SnackBar(content: Text(result['message'] ?? 'Failed to submit'), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
+      setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
 
   bool _validateForm() {
-    if (_titleController.text.trim().isEmpty) {
-      _showError('Please enter a report title');
-      return false;
-    }
-    if (_descriptionController.text.trim().isEmpty) {
-      _showError('Please enter a description');
-      return false;
-    }
-    if (_selectedCategoryId == null) {
-      _showError('Please select a category');
-      return false;
-    }
-    if (_selectedSeverity == null) {
-      _showError('Please select severity');
-      return false;
-    }
+    if (_titleController.text.trim().isEmpty) { _showError('Enter a title'); return false; }
+    if (_descriptionController.text.trim().isEmpty) { _showError('Enter a description'); return false; }
+    if (_selectedCategoryId == null) { _showError('Select a category'); return false; }
+    if (_selectedSeverity == null) { _showError('Select severity'); return false; }
     return true;
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show success screen if report was submitted
-    if (_isSuccess) {
-      return _buildSuccessScreen();
-    }
+    if (_isSuccess) return _buildSuccessScreen();
 
     return Scaffold(
       appBar: AppBar(
@@ -241,58 +181,34 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: const Color(0xFF2E7D32),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Incident Information',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
+            const Text('Incident Information',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
             const SizedBox(height: 16),
-            
-            // Title
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                labelText: 'Report Title *',
-                hintText: 'Enter a descriptive title',
+                labelText: 'Report Title *', hintText: 'Enter a descriptive title',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
-            
-            // Description
             TextFormField(
               controller: _descriptionController,
               maxLines: 4,
               decoration: const InputDecoration(
-                labelText: 'Description *',
-                hintText: 'Describe what you observed',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
+                labelText: 'Description *', hintText: 'Describe what you observed',
+                border: OutlineInputBorder(), alignLabelWithHint: true,
               ),
             ),
             const SizedBox(height: 16),
-            
-            // Category
-            const Text(
-              'Category *',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            const Text('Category *', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -301,29 +217,15 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                 return FilterChip(
                   label: Text(category['name']),
                   selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedCategoryId = selected ? category['id'] : null;
-                    });
-                  },
+                  onSelected: (sel) => setState(() => _selectedCategoryId = sel ? category['id'] : null),
                   backgroundColor: Colors.grey[200],
                   selectedColor: const Color(0xFF2E7D32),
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
-                  ),
+                  labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87),
                 );
               }).toList(),
             ),
             const SizedBox(height: 16),
-            
-            // Severity
-            const Text(
-              'Severity *',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            const Text('Severity *', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -332,141 +234,69 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                 return ChoiceChip(
                   label: Text(severity),
                   selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedSeverity = selected ? severity : null;
-                    });
-                  },
+                  onSelected: (sel) => setState(() => _selectedSeverity = sel ? severity : null),
                   backgroundColor: Colors.grey[200],
                   selectedColor: isSelected ? Colors.green.withOpacity(0.3) : null,
                 );
               }).toList(),
             ),
             const SizedBox(height: 16),
-            
-            // Date
             ListTile(
               title: const Text('Date Observed'),
-              subtitle: Text(
-                _observedDate != null
-                    ? '${_observedDate!.day}/${_observedDate!.month}/${_observedDate!.year}'
-                    : 'Select date',
-              ),
+              subtitle: Text(_observedDate != null
+                  ? '${_observedDate!.day}/${_observedDate!.month}/${_observedDate!.year}'
+                  : 'Select date'),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
                 final date = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
+                  context: context, initialDate: DateTime.now(),
+                  firstDate: DateTime(2020), lastDate: DateTime.now(),
                 );
-                if (date != null) {
-                  setState(() {
-                    _observedDate = date;
-                  });
-                }
+                if (date != null) setState(() => _observedDate = date);
               },
             ),
-            
             const SizedBox(height: 16),
-            
-            // Location
-            const Text(
-              'Location',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
+            const Text('Location', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32))),
             const SizedBox(height: 8),
-            TextFormField(
-              controller: _regionController,
-              decoration: const InputDecoration(
-                labelText: 'Region',
-                hintText: 'e.g., Ashanti Region',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on_outlined),
-              ),
-            ),
+            TextFormField(controller: _regionController,
+              decoration: const InputDecoration(labelText: 'Region', hintText: 'e.g., Ashanti Region',
+                border: OutlineInputBorder(), prefixIcon: Icon(Icons.location_on_outlined))),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _districtController,
-              decoration: const InputDecoration(
-                labelText: 'District',
-                hintText: 'e.g., Kumasi',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_city_outlined),
-              ),
-            ),
+            TextFormField(controller: _districtController,
+              decoration: const InputDecoration(labelText: 'District', hintText: 'e.g., Kumasi',
+                border: OutlineInputBorder(), prefixIcon: Icon(Icons.location_city_outlined))),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _communityController,
-              decoration: const InputDecoration(
-                labelText: 'Community',
-                hintText: 'e.g., Otiinso',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.house_outlined),
-              ),
-            ),
-            
+            TextFormField(controller: _communityController,
+              decoration: const InputDecoration(labelText: 'Community', hintText: 'e.g., Otiinso',
+                border: OutlineInputBorder(), prefixIcon: Icon(Icons.house_outlined))),
             const SizedBox(height: 16),
-            
-            // Evidence Upload
-            const Text(
-              'Add Evidence',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
+
+            // ===== EVIDENCE SECTION =====
+            const Text('Add Evidence', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32))),
             const SizedBox(height: 8),
-            const Text(
-              'Upload photos to support your report',
-              style: TextStyle(color: Colors.grey),
-            ),
+            const Text('Upload photos to support your report', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 12),
-            
-            // Upload button
             InkWell(
               onTap: _showImageSourceDialog,
               child: Container(
-                width: double.infinity,
-                height: 100,
+                width: double.infinity, height: 100,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey[300]!, width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12), color: Colors.grey[50],
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.add_photo_alternate,
-                      size: 32,
-                      color: Colors.grey[400],
-                    ),
+                    Icon(Icons.add_photo_alternate, size: 32, color: Colors.grey[400]),
                     const SizedBox(height: 4),
-                    Text(
-                      'Tap to add photos',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
+                    Text('Tap to add photos', style: TextStyle(color: Colors.grey[600])),
                   ],
                 ),
               ),
             ),
-            
-            // Evidence list
             if (_evidenceFiles.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Text(
-                'Uploaded Photos:',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text('Uploaded Photos:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               SizedBox(
                 height: 80,
@@ -478,37 +308,32 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                       children: [
                         Container(
                           margin: const EdgeInsets.only(right: 8),
-                          width: 80,
-                          height: 80,
+                          width: 80, height: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: FileImage(_evidenceFiles[index]),
-                              fit: BoxFit.cover,
+                            color: Colors.grey[200],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: FutureBuilder<Uint8List>(
+                              future: _evidenceFiles[index].readAsBytes(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Image.memory(snapshot.data!, fit: BoxFit.cover);
+                                }
+                                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                              },
                             ),
                           ),
                         ),
                         Positioned(
-                          top: 0,
-                          right: 8,
+                          top: 0, right: 8,
                           child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _evidenceFiles.removeAt(index);
-                                _evidencePaths.removeAt(index);
-                              });
-                            },
+                            onTap: () => setState(() => _evidenceFiles.removeAt(index)),
                             child: Container(
                               padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16),
                             ),
                           ),
                         ),
@@ -518,60 +343,30 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 16),
-            
-            // Anonymous switch
             SwitchListTile(
-              title: const Text(
-                'Report Anonymously',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: const Text(
-                'Your name will not be shown publicly',
-                style: TextStyle(color: Colors.grey),
-              ),
+              title: const Text('Report Anonymously', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('Your name will not be shown publicly', style: TextStyle(color: Colors.grey)),
               value: _anonymous,
-              onChanged: (value) {
-                setState(() {
-                  _anonymous = value;
-                });
-              },
+              onChanged: (v) => setState(() => _anonymous = v),
               activeColor: const Color(0xFF2E7D32),
               contentPadding: EdgeInsets.zero,
             ),
-            
             const SizedBox(height: 24),
-            
-            // Submit button
             SizedBox(
-              width: double.infinity,
-              height: 56,
+              width: double.infinity, height: 56,
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitReport,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Submit Report',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
+                    ? const SizedBox(height: 20, width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                    : const Text('Submit Report',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
               ),
             ),
           ],
@@ -590,83 +385,36 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    size: 60,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
+                Container(width: 120, height: 120,
+                  decoration: BoxDecoration(color: Colors.green[50], shape: BoxShape.circle),
+                  child: const Icon(Icons.check_circle, size: 60, color: Color(0xFF2E7D32))),
                 const SizedBox(height: 24),
-                const Text(
-                  'Report Submitted!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
+                const Text('Report Submitted!',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
                 const SizedBox(height: 8),
-                Text(
-                  'Your report has been submitted successfully.',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
+                Text('Your report has been submitted successfully.',
+                    style: TextStyle(color: Colors.grey[600])),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Report ID',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _submittedReportCode,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E7D32),
-                        ),
-                      ),
-                    ],
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                  child: Column(children: [
+                    const Text('Report ID', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 4),
+                    Text(_submittedReportCode,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+                  ]),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
-                  width: double.infinity,
-                  height: 56,
+                  width: double.infinity, height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
+                    onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2E7D32),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Go to Home',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: const Text('Go to Home',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                   ),
                 ),
               ],

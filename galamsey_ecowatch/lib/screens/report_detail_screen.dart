@@ -40,7 +40,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List<dynamic> evidenceData = response.data['data']['evidence'] ?? [];
         // Use the full URL - since the backend serves static files, we need the base URL
-        const String baseUrl = 'http://localhost:5000';
+        const String baseUrl = 'https://galamsey-ecowatch-ghana.onrender.com';
         setState(() {
           _evidence = evidenceData.map((item) {
             String fileUrl = item['file_url'] ?? '';

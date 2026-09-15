@@ -186,7 +186,7 @@ Admin Map	Alerts & Tasks
 <img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM" src="https://github.com/user-attachments/assets/162c4b6f-7dda-454a-bbd3-b8e9756c2ed9" />
 
 
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/32e8f3f0-c9e6-4b6d-9e10-905f974b9cca" 
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/32e8f3f0-c9e6-4b6d-9e10-905f974b9cca" />
 
  
 <img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/b142f944-867d-4200-a4a2-21fbf9a4fe8b" />

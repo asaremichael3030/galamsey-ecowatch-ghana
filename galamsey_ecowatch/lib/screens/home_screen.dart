@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/report_provider.dart';
+import '../services/api_service.dart';
 import 'create_report_screen.dart';
 import 'profile_screen.dart';
 import 'my_reports_screen.dart';
@@ -27,32 +28,20 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDataIfAuthenticated();
+      context.read<ReportProvider>().loadReports();
+      context.read<ReportProvider>().loadUserStats();
+      _loadNews();
     });
   }
 
-  Future<void> _loadDataIfAuthenticated() async {
-    final auth = context.read<AuthProvider>();
-    if (!auth.isAuthenticated) {
-      print('⏭️  HomeScreen: skipping data load (not authenticated)');
-      return;
-    }
-
-    final reports = context.read<ReportProvider>();
-    await reports.loadReports();
-    await reports.loadUserStats();
-    await _loadNews();
-  }
-
   Future<void> _loadNews() async {
-    if (!context.read<AuthProvider>().isAuthenticated) return;
-
-    setState(() => _loadingNews = true);
+    setState(() {
+      _loadingNews = true;
+    });
 
     try {
       final apiService = context.read<AuthProvider>().apiService;
       final response = await apiService.get('/news');
-
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List<dynamic> newsData = response.data['data']['news'] ?? [];
         setState(() {
@@ -76,15 +65,18 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error loading news: $e');
     }
 
-    if (mounted) setState(() => _loadingNews = false);
+    setState(() {
+      _loadingNews = false;
+    });
   }
 
   void _navigateToCreateReport() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CreateReportScreen()),
+      MaterialPageRoute(
+        builder: (context) => const CreateReportScreen(),
+      ),
     ).then((_) {
-      if (!context.read<AuthProvider>().isAuthenticated) return;
       context.read<ReportProvider>().loadReports();
       context.read<ReportProvider>().loadUserStats();
     });
@@ -93,9 +85,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToProfile() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+      MaterialPageRoute(
+        builder: (context) => const ProfileScreen(),
+      ),
     ).then((_) {
-      if (!context.read<AuthProvider>().isAuthenticated) return;
       context.read<ReportProvider>().loadUserStats();
     });
   }
@@ -103,9 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToMyReports() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const MyReportsScreen()),
+      MaterialPageRoute(
+        builder: (context) => const MyReportsScreen(),
+      ),
     ).then((_) {
-      if (!context.read<AuthProvider>().isAuthenticated) return;
       context.read<ReportProvider>().loadReports();
     });
   }
@@ -113,21 +107,27 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToMap() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const MapScreen()),
+      MaterialPageRoute(
+        builder: (context) => const MapScreen(),
+      ),
     );
   }
 
   void _navigateToNotifications() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+      MaterialPageRoute(
+        builder: (context) => const NotificationsScreen(),
+      ),
     );
   }
 
   void _navigateToEducation() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const EducationScreen()),
+      MaterialPageRoute(
+        builder: (context) => const EducationScreen(),
+      ),
     );
   }
 
@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------- Header ----------
+            // Header
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // ---------- Report card ----------
+            // Report Card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -243,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // ---------- Stats ----------
+            // Stats
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -276,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // ---------- Recent Reports ----------
+            // Recent Reports
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
@@ -315,18 +315,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 title: Text(
                                   report.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
                                 subtitle: Text(
                                   report.region ?? 'Unknown location',
                                 ),
                                 trailing: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: report.statusColor,
                                     borderRadius: BorderRadius.circular(4),
@@ -344,9 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => ReportDetailScreen(
-                                        reportId: report.id,
-                                      ),
+                                      builder: (context) => ReportDetailScreen(reportId: report.id),
                                     ),
                                   );
                                 },
@@ -356,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
             ),
 
-            // ---------- News ----------
+            // ==================== NEWS SECTION (TAPPABLE) ====================
             if (!_loadingNews && _news.isNotEmpty) ...[
               const SizedBox(height: 4),
               const Padding(
@@ -384,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => NewsDetailScreen(news: item),
+                            builder: (context) => NewsDetailScreen(news: item),
                           ),
                         );
                       },
@@ -444,8 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF2E7D32)
-                                            .withOpacity(0.1),
+                                        color: const Color(0xFF2E7D32).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -469,7 +461,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-            if (_loadingNews)
+            if (_loadingNews) ...[
+              const SizedBox(height: 8),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -477,6 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
+            ],
             const SizedBox(height: 12),
           ],
         ),
@@ -493,7 +487,9 @@ class _HomeScreenState extends State<HomeScreen> {
           } else if (index == 1) {
             _navigateToMap();
           } else {
-            setState(() => _currentIndex = index);
+            setState(() {
+              _currentIndex = index;
+            });
           }
         },
         type: BottomNavigationBarType.fixed,

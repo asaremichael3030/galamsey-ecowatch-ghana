@@ -17,7 +17,9 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
   List<Map<String, dynamic>> _articles = [];
   bool _isLoading = true;
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Mining', 'Environment', 'Action', 'General'];
+  final List<String> _categories = [
+    'All', 'Mining', 'Environment', 'Action', 'General'
+  ];
   final ImagePicker _imagePicker = ImagePicker();
   File? _selectedImage;
 
@@ -28,14 +30,12 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
   }
 
   Future<void> _loadArticles() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final apiService = context.read<AuthProvider>().apiService;
       final response = await apiService.get('/education');
-      
+
       if (response.statusCode == 200 && response.data['success'] == true) {
         final List<dynamic> articlesData = response.data['data']['articles'] ?? [];
         setState(() {
@@ -48,7 +48,9 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
             'image_url': article['image_url'],
             'published': article['published'] ?? false,
             'author_name': article['author_name'] ?? 'Unknown',
-            'created_at': article['created_at'] != null ? DateTime.parse(article['created_at']) : DateTime.now(),
+            'created_at': article['created_at'] != null
+                ? DateTime.parse(article['created_at'])
+                : DateTime.now(),
           }).toList();
         });
       }
@@ -67,24 +69,11 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
             'author_name': 'System Admin',
             'created_at': DateTime.now().subtract(const Duration(days: 5)),
           },
-          {
-            'id': 2,
-            'title': 'Effects of Illegal Mining on Rivers',
-            'description': 'How galamsey destroys our water bodies',
-            'content': 'Illegal mining activities have devastating effects on Ghana rivers...',
-            'category': 'Environment',
-            'image_url': null,
-            'published': true,
-            'author_name': 'System Admin',
-            'created_at': DateTime.now().subtract(const Duration(days: 3)),
-          },
         ];
       });
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
   }
 
   Future<void> _pickImage() async {
@@ -95,16 +84,13 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
         maxHeight: 600,
         imageQuality: 80,
       );
-      
       if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
+        setState(() => _selectedImage = File(image.path));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error picking image: ${e.toString()}'),
+          content: Text('Error picking image: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -138,10 +124,8 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                         labelText: 'Title *',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return 'Title is required';
-                        return null;
-                      },
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Title is required' : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -150,10 +134,9 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                         labelText: 'Description *',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return 'Description is required';
-                        return null;
-                      },
+                      validator: (v) => v == null || v.isEmpty
+                          ? 'Description is required'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -164,10 +147,8 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                         border: OutlineInputBorder(),
                         alignLabelWithHint: true,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return 'Content is required';
-                        return null;
-                      },
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Content is required' : null,
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
@@ -176,16 +157,11 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                         labelText: 'Category',
                         border: OutlineInputBorder(),
                       ),
-                      items: ['General', 'Mining', 'Environment', 'Action'].map((category) {
-                        return DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
+                      items: ['General', 'Mining', 'Environment', 'Action']
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
                       onChanged: (value) {
-                        setStateDialog(() {
-                          selectedCategory = value!;
-                        });
+                        setStateDialog(() => selectedCategory = value!);
                       },
                     ),
                     const SizedBox(height: 12),
@@ -214,22 +190,16 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                                     top: 4,
                                     right: 4,
                                     child: GestureDetector(
-                                      onTap: () {
-                                        setStateDialog(() {
-                                          _selectedImage = null;
-                                        });
-                                      },
+                                      onTap: () => setStateDialog(
+                                          () => _selectedImage = null),
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: const BoxDecoration(
                                           color: Colors.red,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
+                                        child: const Icon(Icons.close,
+                                            color: Colors.white, size: 16),
                                       ),
                                     ),
                                   ),
@@ -239,19 +209,13 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.add_photo_alternate,
-                                      size: 32,
-                                      color: Colors.grey[400],
-                                    ),
+                                    Icon(Icons.add_photo_alternate,
+                                        size: 32, color: Colors.grey[400]),
                                     const SizedBox(height: 4),
-                                    Text(
-                                      'Tap to upload image',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
+                                    Text('Tap to upload image',
+                                        style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 12)),
                                   ],
                                 ),
                               ),
@@ -261,11 +225,7 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                     SwitchListTile(
                       title: const Text('Publish Immediately'),
                       value: published,
-                      onChanged: (value) {
-                        setStateDialog(() {
-                          published = value;
-                        });
-                      },
+                      onChanged: (v) => setStateDialog(() => published = v),
                       activeColor: const Color(0xFF2E7D32),
                     ),
                   ],
@@ -280,17 +240,19 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
               ElevatedButton(
                 onPressed: () async {
                   if (!formKey.currentState!.validate()) return;
-                  
+
                   Navigator.pop(context);
-                  
+
                   try {
                     final apiService = context.read<AuthProvider>().apiService;
-                    
+
+                    // NOTE: image upload to Cloudinary is not yet wired for
+                    // education articles. Leave image_url null for now.
                     String? imageUrl;
                     if (_selectedImage != null) {
-                      imageUrl = 'https://via.placeholder.com/800x600';
+                      imageUrl = null; // TODO: upload via Cloudinary
                     }
-                    
+
                     final response = await apiService.post('/education', data: {
                       'title': titleController.text.trim(),
                       'description': descriptionController.text.trim(),
@@ -299,8 +261,10 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                       'image_url': imageUrl,
                       'published': published,
                     });
-                    
-                    if (response.statusCode == 201 && response.data['success'] == true) {
+
+                    if (response.statusCode == 201 &&
+                        response.data['success'] == true) {
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Article created successfully'),
@@ -309,14 +273,17 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                       );
                       _loadArticles();
                     } else {
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(response.data['message'] ?? 'Failed to create article'),
+                          content: Text(response.data['message'] ??
+                              'Failed to create article'),
                           backgroundColor: Colors.red,
                         ),
                       );
                     }
                   } catch (e) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Network error. Please try again.'),
@@ -343,17 +310,20 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
       final response = await apiService.put('/education/$articleId', data: {
         'published': !currentPublished,
       });
-      
+
       if (response.statusCode == 200 && response.data['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Article ${currentPublished ? 'unpublished' : 'published'}'),
+            content: Text(
+                'Article ${currentPublished ? 'unpublished' : 'published'}'),
             backgroundColor: Colors.green,
           ),
         );
         _loadArticles();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Network error. Please try again.'),
@@ -376,10 +346,7 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -389,8 +356,9 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
       try {
         final apiService = context.read<AuthProvider>().apiService;
         final response = await apiService.delete('/education/$articleId');
-        
+
         if (response.statusCode == 200 && response.data['success'] == true) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Article deleted successfully'),
@@ -400,6 +368,7 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
           _loadArticles();
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Network error. Please try again.'),
@@ -412,7 +381,9 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
 
   List<Map<String, dynamic>> _getFilteredArticles() {
     if (_selectedCategory == 'All') return _articles;
-    return _articles.where((article) => article['category'] == _selectedCategory).toList();
+    return _articles
+        .where((article) => article['category'] == _selectedCategory)
+        .toList();
   }
 
   @override
@@ -442,7 +413,6 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Category filter
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: SingleChildScrollView(
@@ -457,14 +427,20 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                             selected: isSelected,
                             onSelected: (selected) {
                               setState(() {
-                                _selectedCategory = selected ? category : 'All';
+                                _selectedCategory =
+                                    selected ? category : 'All';
                               });
                             },
                             backgroundColor: Colors.white,
-                            selectedColor: const Color(0xFF2E7D32).withOpacity(0.2),
+                            selectedColor:
+                                const Color(0xFF2E7D32).withOpacity(0.2),
                             labelStyle: TextStyle(
-                              color: isSelected ? const Color(0xFF2E7D32) : Colors.grey[600],
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                              color: isSelected
+                                  ? const Color(0xFF2E7D32)
+                                  : Colors.grey[600],
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         );
@@ -472,50 +448,34 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                     ),
                   ),
                 ),
-                
-                // Article count
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '${filteredArticles.length} articles found',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ),
                 ),
-                
-                // Articles list
                 Expanded(
                   child: filteredArticles.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.school_outlined,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
+                              Icon(Icons.school_outlined,
+                                  size: 64, color: Colors.grey[400]),
                               const SizedBox(height: 16),
-                              Text(
-                                'No articles found',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
+                              Text('No articles found',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[600])),
                               const SizedBox(height: 8),
-                              Text(
-                                'Create educational content for users',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
+                              Text('Create educational content for users',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[400])),
                               const SizedBox(height: 16),
                               ElevatedButton(
                                 onPressed: _createArticle,
@@ -557,15 +517,16 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                   child: Text(
                     article['title'],
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: published ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    color: published
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -582,10 +543,7 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
             const SizedBox(height: 4),
             Text(
               article['description'],
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -607,7 +565,8 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                 TextButton(
                   onPressed: () => _togglePublish(article['id'], published),
                   style: TextButton.styleFrom(
-                    foregroundColor: published ? Colors.orange : Colors.green,
+                    foregroundColor:
+                        published ? Colors.orange : Colors.green,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
                   ),
@@ -617,7 +576,6 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Edit Button
                 TextButton(
                   onPressed: () {
                     showDialog(
@@ -633,10 +591,8 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
                   ),
-                  child: const Text(
-                    'Edit',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  child: const Text('Edit',
+                      style: TextStyle(fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
                 TextButton(
@@ -646,10 +602,8 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
                   ),
-                  child: const Text(
-                    'Delete',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  child: const Text('Delete',
+                      style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
@@ -673,10 +627,7 @@ class _AdminEducationScreenState extends State<AdminEducationScreen> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
           ),
         ],
       ),

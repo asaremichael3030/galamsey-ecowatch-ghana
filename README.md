@@ -9,39 +9,6 @@ Illegal mining (galamsey) has caused severe environmental damage across Ghana �
 EcoWatch Ghana provides a real-time platform for citizens to report incidents with photo evidence and GPS location, while giving authorities a comprehensive dashboard to review, 
 investigate, and resolve reports.
 
-# 📸 Screenshots
-# 👤 Citizen App
-Login	Home Dashboard
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 36 PM" src="https://github.com/user-attachments/assets/6f146af5-fd72-4e33-9461-b3e110ff90eb" />
-
-user home Dashboard
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 34 PM" src="https://github.com/user-attachments/assets/cf1a8375-1e61-4f03-ada2-2195aed07f97" />
-
-Create Report	Report Details
-<img width="499" height="1080" alt="c rep" src="https://github.com/user-attachments/assets/9f271068-1b3c-4d36-97b2-a2d85feb10fc" />
-
-My Reports Dashboard
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 36 PM (1)" src="https://github.com/user-attachments/assets/6bbfefe3-1747-4c02-9b39-3a74b0abd623" />
-
-Map View	Notifications
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 35 PM" src="https://github.com/user-attachments/assets/7bfb9b8e-aa44-4ecd-b300-b3cd7fcbaa60" />
-
-
-# 🛡️ Admin Dashboard
-Dashboard Overview	Reports Management
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 55 PM" src="https://github.com/user-attachments/assets/6767da93-cb28-48a4-8867-d2007ccdb43f" />
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 56 PM" src="https://github.com/user-attachments/assets/1adf0c40-defb-42d8-a54f-977d5d4e83c6" />
-
-Analytics	Users Management
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 31 20 PM" src="https://github.com/user-attachments/assets/8abef6de-0265-42da-85c8-293e51543b1c" />
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 56 PM (1)" src="https://github.com/user-attachments/assets/0ab012a5-4cff-4a60-9759-05a9741830c8" />
-
-Admin Map	Alerts & Tasks
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 31 20 PM (1)" src="https://github.com/user-attachments/assets/64026184-82b4-4ffe-a16c-1fbb8b77c090" />
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM" src="https://github.com/user-attachments/assets/162c4b6f-7dda-454a-bbd3-b8e9756c2ed9" />
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/32e8f3f0-c9e6-4b6d-9e10-905f974b9cca" />
-<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/b142f944-867d-4200-a4a2-21fbf9a4fe8b" />
-
 # Features
 # 👤 Citizen App
 Secure registration and login (JWT authentication)
@@ -178,3 +145,49 @@ GitHub: @asaremichael3030
 
 🙏 Acknowledgments
 Built to support Ghana's fight against illegal mining and to empower communities to protect their environment.
+
+# 📸 Screenshots
+# 👤 Citizen App
+Login	Home Dashboard
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 36 PM" src="https://github.com/user-attachments/assets/6f146af5-fd72-4e33-9461-b3e110ff90eb" />
+
+user home Dashboard
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 34 PM" src="https://github.com/user-attachments/assets/cf1a8375-1e61-4f03-ada2-2195aed07f97" />
+
+Create Report	Report Details
+<img width="499" height="1080" alt="c rep" src="https://github.com/user-attachments/assets/9f271068-1b3c-4d36-97b2-a2d85feb10fc" />
+
+My Reports Dashboard
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 36 PM (1)" src="https://github.com/user-attachments/assets/6bbfefe3-1747-4c02-9b39-3a74b0abd623" />
+
+Map View	Notifications
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 19 35 PM" src="https://github.com/user-attachments/assets/7bfb9b8e-aa44-4ecd-b300-b3cd7fcbaa60" />
+
+
+# 🛡️ Admin Dashboard
+Dashboard Overview	Reports Management
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 55 PM" src="https://github.com/user-attachments/assets/6767da93-cb28-48a4-8867-d2007ccdb43f" />
+
+
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 56 PM" src="https://github.com/user-attachments/assets/1adf0c40-defb-42d8-a54f-977d5d4e83c6" />
+
+
+Analytics	Users Management
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 31 20 PM" src="https://github.com/user-attachments/assets/8abef6de-0265-42da-85c8-293e51543b1c" />
+
+
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 56 PM (1)" src="https://github.com/user-attachments/assets/0ab012a5-4cff-4a60-9759-05a9741830c8" />
+
+
+Admin Map	Alerts & Tasks
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 31 20 PM (1)" src="https://github.com/user-attachments/assets/64026184-82b4-4ffe-a16c-1fbb8b77c090" />
+
+
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM" src="https://github.com/user-attachments/assets/162c4b6f-7dda-454a-bbd3-b8e9756c2ed9" />
+
+
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/32e8f3f0-c9e6-4b6d-9e10-905f974b9cca" 
+
+ 
+<img width="499" height="1080" alt="WhatsApp Image 2026-09-15 at 6 28 57 PM (1)" src="https://github.com/user-attachments/assets/b142f944-867d-4200-a4a2-21fbf9a4fe8b" />
+

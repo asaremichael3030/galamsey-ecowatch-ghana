@@ -14,16 +14,16 @@ class ApiService {
     this.secureStorage, {
     String? baseUrl,
   }) {
-    // Configure Dio with the correct base URL
+    // Configure Dio
     dio.options.baseUrl = baseUrl ?? 'http://localhost:5000/api';
-    dio.options.connectTimeout = const Duration(seconds: 30);
-    dio.options.receiveTimeout = const Duration(seconds: 30);
+    dio.options.connectTimeout = const Duration(seconds: 90);
+    dio.options.receiveTimeout = const Duration(seconds: 90);
     dio.options.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    
-    // Add logging interceptor for debugging
+
+    // Interceptors for logging and auth
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -31,47 +31,63 @@ class ApiService {
           if (options.data != null) {
             print('📦 Data: ${options.data}');
           }
-          // Try to get token if not already set
+
+          // Load token if not already in memory
           if (_token == null) {
             _token = await secureStorage.read(key: 'token');
           }
-          if (_token != null) {
+
+          if (_token != null && _token!.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $_token';
           }
+
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('✅ Response: ${response.statusCode} ${response.requestOptions.uri}');
+          print(
+              '✅ Response: ${response.statusCode} ${response.requestOptions.uri}');
           return handler.next(response);
         },
         onError: (error, handler) async {
           print('❌ Error: ${error.message}');
-          print('❌ Response: ${error.response?.statusCode} ${error.response?.data}');
-          if (error.response?.statusCode == 401) {
+          print(
+              '❌ Response: ${error.response?.statusCode} ${error.response?.data}');
+
+          // Clear token only when the server explicitly says the token is
+          // invalid or expired — NOT when "no token provided" (which just
+          // means the user isn't logged in yet).
+          final serverMsg = error.response?.data?['message']?.toString() ?? '';
+          final isExpiredOrInvalid = serverMsg.toLowerCase().contains('invalid') ||
+              serverMsg.toLowerCase().contains('expired');
+
+          if (error.response?.statusCode == 401 && isExpiredOrInvalid) {
             await clearToken();
           }
+
           return handler.next(error);
         },
       ),
     );
   }
 
-  // Set token
+  // -------- TOKEN MANAGEMENT --------
   Future<void> setToken(String token) async {
     _token = token;
     await secureStorage.write(key: 'token', value: token);
   }
 
-  // Clear token
   Future<void> clearToken() async {
     _token = null;
     await secureStorage.delete(key: 'token');
   }
 
-  // Get token
   String? get token => _token;
 
-  // GET request
+  /// Returns true if a token is currently held in memory.
+  /// Useful for guarding API calls when the user isn't logged in.
+  bool get isAuthenticated => _token != null && _token!.isNotEmpty;
+
+  // -------- HTTP METHODS --------
   Future<Response> get(String path, {Map<String, dynamic>? queryParams}) async {
     try {
       return await dio.get(path, queryParameters: queryParams);
@@ -81,7 +97,6 @@ class ApiService {
     }
   }
 
-  // POST request
   Future<Response> post(String path, {dynamic data}) async {
     try {
       return await dio.post(path, data: data);
@@ -91,7 +106,6 @@ class ApiService {
     }
   }
 
-  // PUT request
   Future<Response> put(String path, {dynamic data}) async {
     try {
       return await dio.put(path, data: data);
@@ -101,7 +115,6 @@ class ApiService {
     }
   }
 
-  // PATCH request
   Future<Response> patch(String path, {dynamic data}) async {
     try {
       return await dio.patch(path, data: data);
@@ -111,7 +124,6 @@ class ApiService {
     }
   }
 
-  // DELETE request
   Future<Response> delete(String path) async {
     try {
       return await dio.delete(path);
@@ -121,11 +133,9 @@ class ApiService {
     }
   }
 
-  // Upload file with multipart
   Future<Response> upload(String path, FormData formData) async {
     try {
-      // For upload, we need to set multipart header
-      final response = await dio.post(
+      return await dio.post(
         path,
         data: formData,
         options: Options(
@@ -134,7 +144,6 @@ class ApiService {
           },
         ),
       );
-      return response;
     } on DioException catch (e) {
       print('Upload Error: ${e.response?.data}');
       rethrow;
